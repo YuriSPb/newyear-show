@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Новогодняя Ностальгия — Генератор слайд‑шоу (Ken Burns + переходы + финал + iPhone + экспорт видео)</title>
+  <style>
+    :root{
+      --bg: #0a192f;
+      --panel: rgba(17, 34, 64, 0.82);
+      --panel-border: rgba(148, 163, 184, 0.35);
+      --text: #e6f1ff;
+      --muted: rgba(226, 232, 240, 0.75);
+      --accent: #fbbf24;
+      --accent-2: #1e3a8a;
+      --ok: #22c55e;
+      --shadow: 0 25px 60px rgba(0,0,0,0.35);
+    }
+    *{ box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      background: radial-gradient(1000px 600px at 20% 0%, rgba(30,58,138,0.45), transparent 60%),
+                  radial-gradient(900px 500px at 80% 10%, rgba(251,191,36,0.18), transparent 55%),
+                  linear-gradient(180deg, #061224, var(--bg));
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    .container{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 16px 42px;
+      position: relative;
+      z-index: 2;
+    }
+    header{
+      text-align:center;
+      margin: 18px 0 22px;
+    }
+    header h1{
+      margin: 0;
+      font-size: clamp(28px, 4vw, 56px);
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      font-weight: 800;
+    }
+    header p{
+      margin: 10px auto 0;
+      max-width: 900px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 900px){
+      .grid{ grid-template-columns: 1fr 1fr; gap: 22px; }
+    }
+
+    .step-title{
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 0 0 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(148,163,184,0.35);
+    }
+    .subtle{
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 10px;
+      line-height: 1.4;
+    }
+
+    .btn{
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 800;
+      border-radius: 10px;
+      padding: 12px 14px;
+      transition: transform 0.15s ease, filter 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+      display: inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      user-select: none;
+      text-decoration: none;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn-primary{
+      background: var(--accent);
+      color: #111827;
+      box-shadow: 0 10px 30px rgba(251,191,36,0.2);
+    }
+    .btn-primary:hover{ filter: brightness(1.05); transform: translateY(-1px); }
+    .btn-secondary{
+      background: var(--accent-2);
+      color: white;
+    }
+    .btn-secondary:hover{ filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-ghost{
+      background: rgba(148,163,184,0.14);
+      color: var(--text);
+      border: 1px solid rgba(148,163,184,0.28);
+    }
+    .btn-ghost:hover{ filter: brightness(1.07); transform: translateY(-1px); }
+    .btn[disabled]{
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none !important;
+      filter: none !important;
+    }
+
+    input[type="file"]{ display:none; }
+
+    .uploader{
+      display:flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      text-align: center;
+    }
+    .file-status{
+      font-size: 13px;
+      color: var(--ok);
+      text-align:center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .range-wrap{
+      width: 100%;
+      margin-top: 12px;
+    }
+    input[type="range"]{ width: 100%; accent-color: var(--accent); }
+    .range-value{
+      margin-top: 6px;
+      text-align:center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .control-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148,163,184,0.28);
+    }
+    @media (min-width: 520px){
+      .control-grid{ grid-template-columns: 1fr 1fr; }
+    }
+    .control{
+      border: 1px solid rgba(148,163,184,0.22);
+      background: rgba(2,6,23,0.22);
+      border-radius: 12px;
+      padding: 12px;
+      display:flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 96px;
+    }
+    .control label{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 800;
+      color: rgba(226,232,240,0.92);
+      font-size: 13px;
+    }
+    .control small{ color: var(--muted); line-height: 1.35; }
+    .control select{
+      width:100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148,163,184,0.28);
+      background: rgba(2,6,23,0.48);
+      color: rgba(226,232,240,0.92);
+      outline: none;
+    }
+    .control input[type="checkbox"]{
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .drop-area{
+      border: 2px dashed rgba(148,163,184,0.35);
+      border-radius: 12px;
+      padding: 14px;
+      text-align:center;
+      color: var(--muted);
+      font-size: 13px;
+      transition: border-color .2s ease, background-color .2s ease;
+    }
+    .drop-area.dragover{
+      border-color: rgba(251,191,36,0.65);
+      background: rgba(251,191,36,0.06);
+      color: rgba(226,232,240,0.9);
+    }
+
+    .image-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.28);
+      background: rgba(15, 23, 42, 0.45);
+      min-height: 180px;
+      max-height: 230px;
+      overflow: auto;
+    }
+    @media (min-width: 520px){
+      .image-grid{ grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .empty{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border: 2px dashed rgba(148,163,184,0.35);
+      border-radius: 12px;
+      height: 230px;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 18px;
+      text-align:center;
+    }
+
+    .thumb{
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: grab;
+      border: 1px solid rgba(148,163,184,0.18);
+      background: rgba(2,6,23,0.65);
+      transition: transform 0.12s ease, opacity 0.12s ease, outline 0.12s ease;
+    }
+    .thumb.dragging{ opacity: 0.4; transform: scale(0.98); cursor: grabbing; }
+    .thumb.drop-target{ outline: 2px solid rgba(251,191,36,0.6); outline-offset: 2px; }
+    .thumb img{ width: 100%; height: 100%; object-fit: cover; display:block; }
+    .thumb .overlay{
+      position:absolute; inset:0;
+      background: rgba(0,0,0,0);
+      transition: background 0.2s ease;
+    }
+    .thumb:hover .overlay{ background: rgba(0,0,0,0.35); }
+
+    .remove-btn{
+      position: absolute;
+      top: 6px; right: 6px;
+      width: 28px; height: 28px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(0,0,0,0.45);
+      color: white;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s ease, background 0.2s ease, transform 0.12s ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .thumb:hover .remove-btn{ opacity: 1; }
+    .remove-btn:hover{ background: rgba(239,68,68,0.85); transform: translateY(-1px); }
+
+    .footer{
+      text-align:center;
+      margin-top: 18px;
+      color: rgba(148,163,184,0.8);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .action-bar{
+      margin-top: 16px;
+      display:flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Snowflakes */
+    .snow{ position: fixed; inset: 0; pointer-events:none; z-index: 1; overflow:hidden; }
+    .flake{
+      position: absolute;
+      top: -10%;
+      color: rgba(255,255,255,0.75);
+      opacity: 0.9;
+      user-select:none;
+      will-change: transform;
+      animation: fall linear infinite, sway ease-in-out infinite;
+      filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
+    }
+    @keyframes fall{ from { transform: translateY(-10vh); } to { transform: translateY(110vh); } }
+    @keyframes sway{ 0%,100%{ margin-left: 0px; } 50%{ margin-left: 40px; } }
+
+    /* --- Export modal --- */
+    .modal{
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.62);
+      padding: 18px;
+    }
+    .modal.visible{ display:flex; }
+    .modal-card{
+      width: min(720px, calc(100vw - 36px));
+      background: rgba(17, 34, 64, 0.92);
+      border: 1px solid rgba(148,163,184,0.35);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      backdrop-filter: blur(12px);
+    }
+    .modal-title{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .modal-title h2{
+      margin:0;
+      color: var(--accent);
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+    .modal-close{
+      border: 1px solid rgba(148,163,184,0.28);
+      background: rgba(148,163,184,0.14);
+      color: rgba(226,232,240,0.92);
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+    .modal-close:hover{ filter: brightness(1.08); }
+    .modal-note{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.22);
+      background: rgba(2,6,23,0.22);
+      color: rgba(226,232,240,0.86);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .progress-wrap{
+      margin-top: 12px;
+      border-top: 1px solid rgba(148,163,184,0.22);
+      padding-top: 12px;
+    }
+    .progress-bar2{
+      height: 10px;
+      border-radius: 999px;
+      overflow:hidden;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .progress-bar2 > div{
+      height:100%;
+      width:0%;
+      background: rgba(251,191,36,0.92);
+    }
+    .progress-line{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    code.kbd{
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: rgba(2,6,23,0.40);
+      border: 1px solid rgba(148,163,184,0.22);
+      color: rgba(226,232,240,0.92);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="snow" id="snow"></div>
+
+  <div class="container">
+    <header>
+      <h1>Новогодняя Ностальгия</h1>
+      <p>Офлайн‑генератор: загрузите фото, добавьте музыку и скачайте “шоу” в виде одного HTML‑файла. Есть <b>Ken Burns</b> и набор <b>переходов</b>. Финал: последний кадр держится <b>10 секунд</b>, музыка начинает угасать через <b>3 секунды</b> на последнем кадре. <b>NEW:</b> экспорт в видео <b>WebM/MP4</b> прямо из браузера (если поддерживается).</p>
+    </header>
+
+    <div class="panel">
+      <div class="grid">
+        <section>
+          <h2 class="step-title">Шаг 1: Загрузите файлы</h2>
+
+          <div class="uploader">
+            <div>
+              <label class="btn btn-secondary" for="imageUpload" style="width:100%;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 16V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M7 9l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Выбрать изображения
+              </label>
+              <input id="imageUpload" type="file" multiple accept="image/*" />
+              <div class="hint">Можно выбрать несколько файлов</div>
+            </div>
+
+            <div class="drop-area" id="dropArea">
+              Или перетащите изображения сюда (drag &amp; drop)
+            </div>
+
+            <div>
+              <label class="btn btn-secondary" for="audioUpload" style="width:100%;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="7" cy="18" r="3" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="19" cy="16" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Выбрать музыку (MP3)
+              </label>
+              <input id="audioUpload" type="file" accept="audio/mpeg,audio/mp3,audio/*" />
+              <div class="file-status" id="audioStatus" style="display:none;"></div>
+            </div>
+
+            <div class="row">
+              <button class="btn btn-ghost" id="clearAllBtn" type="button">Очистить всё</button>
+              <span class="subtle" id="counterText">Изображений: 0</span>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="step-title">Шаг 2: Настройте шоу</h2>
+          <p class="subtle">Перетащите фото, чтобы задать порядок. Переходы и Ken Burns применяются в сгенерированной презентации. Экспорт видео записывает шоу в Canvas → MediaRecorder (самый совместимый вариант — Chrome/Edge на ПК).</p>
+
+          <div id="emptyState" class="empty">Здесь появятся ваши фото</div>
+          <div id="imageGrid" class="image-grid" style="display:none;"></div>
+
+          <div class="range-wrap">
+            <label for="durationRange" class="subtle" style="display:block;margin-bottom:8px;">
+              Время показа одного слайда (секунд):
+            </label>
+            <input id="durationRange" type="range" min="2" max="15" step="1" value="5" />
+            <div class="range-value" id="durationValue">5 сек.</div>
+          </div>
+
+          <div class="control-grid" aria-label="Настройки эффектов">
+            <div class="control">
+              <label>
+                <input id="kenBurnsToggle" type="checkbox" checked />
+                Киношное движение (Ken Burns)
+              </label>
+              <small>Плавный зум и панорамирование на каждом слайде. Если включён “уменьшенный motion” в системе — эффект будет автоматически выключен.</small>
+            </div>
+
+            <div class="control">
+              <label for="transitionSelect">Переход между слайдами</label>
+              <select id="transitionSelect">
+                <option value="random">Случайный (каждый слайд)</option>
+                <option value="fade">Fade (мягкий)</option>
+                <option value="dissolve">Dissolve (быстрее)</option>
+                <option value="blur-fade">Blur‑fade</option>
+                <option value="slide">Slide</option>
+                <option value="zoom-cross">Zoom‑cross</option>
+                <option value="film-cut">Film cut</option>
+                <option value="polaroid-flip">Polaroid flip</option>
+              </select>
+              <small>Режим “Случайный” подбирает эффект на каждую смену кадра.</small>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn btn-primary" id="generateBtn" type="button" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 12v10H4V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M2 7h20v5H2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 22V7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 7c-2.2 0-4-1.3-4-3s1.8-3 4-3c1.3 0 2.5.5 3.2 1.3C16.5 1.5 17.7 1 19 1c2.2 0 4 1.3 4 3s-1.8 3-4 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Создать и Скачать HTML
+        </button>
+
+        <button class="btn btn-ghost" id="previewBtn" type="button" disabled>
+          Открыть презентацию в новой вкладке
+        </button>
+
+        <button class="btn btn-ghost" id="exportVideoBtn" type="button" disabled>
+          Экспорт видео (WebM/MP4)
+        </button>
+      </div>
+
+      <div class="footer">
+        <div>&copy; <span id="year"></span> С Новым Годом!</div>
+        <div style="opacity:0.85;">Подсказка: музыка может не стартовать автоматически — браузер может требовать клик.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export modal -->
+  <div id="exportModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+      <div class="modal-title">
+        <h2 id="exportTitle">Экспорт в видео</h2>
+        <button id="exportCloseBtn" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <p class="subtle" id="exportSupportLine" style="margin-bottom: 10px;">Проверяем поддержку экспорта в вашем браузере…</p>
+
+      <div class="control-grid">
+        <div class="control">
+          <label for="exportResSelect">Разрешение</label>
+          <select id="exportResSelect">
+            <option value="1280x720">1280×720 (рекомендуется)</option>
+            <option value="1920x1080">1920×1080 (тяжелее)</option>
+            <option value="960x540">960×540 (быстрее)</option>
+          </select>
+          <small>Чем выше, тем больше нагрузка и размер файла.</small>
+        </div>
+
+        <div class="control">
+          <label for="exportFpsSelect">FPS</label>
+          <select id="exportFpsSelect">
+            <option value="30">30 fps</option>
+            <option value="24">24 fps</option>
+          </select>
+          <small>30 fps выглядит плавнее, но тяжелее.</small>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="exportAudioToggle" type="checkbox" checked />
+            Включить музыку в видео
+          </label>
+          <small>Если браузер позволяет добавить аудиодорожку. Иначе экспорт будет “видео без звука”.</small>
+        </div>
+
+        <div class="control">
+          <label for="exportBitrateSelect">Качество (битрейт)</label>
+          <select id="exportBitrateSelect">
+            <option value="auto">Авто</option>
+            <option value="4">4 Мбит/с</option>
+            <option value="8">8 Мбит/с</option>
+            <option value="12">12 Мбит/с</option>
+          </select>
+          <small>Больше — лучше качество и больше размер файла.</small>
+        </div>
+      </div>
+
+      <div id="exportProgressWrap" class="progress-wrap" style="display:none;">
+        <div class="progress-line">
+          <div class="subtle" id="exportProgressText" style="margin:0;">Подготовка…</div>
+          <div class="subtle" id="exportEtaText" style="margin:0;">&nbsp;</div>
+        </div>
+        <div class="progress-bar2"><div id="exportProgressBar"></div></div>
+      </div>
+
+      <div class="action-bar" style="margin-top: 14px;">
+        <button class="btn btn-primary" id="exportStartBtn" type="button">Начать экспорт</button>
+        <button class="btn btn-ghost" id="exportCancelBtn" type="button" disabled>Отмена</button>
+      </div>
+
+      <div class="modal-note" id="exportNote">
+        Совместимость: MediaRecorder поддерживается не везде. Надёжнее всего работает в <b>Chrome / Edge на ПК</b>. На iPhone (Safari / встроенные просмотрщики) экспорт может быть недоступен или будет только MP4 (если поддерживается).
+        Если получится WebM, но нужен MP4 — его можно конвертировать любым конвертером (например, ffmpeg).
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const yearEl = document.getElementById('year');
+      yearEl.textContent = String(new Date().getFullYear());
+
+      // --- Snowflakes (generator UI) ---
+      const snow = document.getElementById('snow');
+      const flakeCount = 22;
+      const flakeChars = ['❄','✻','✼','❅'];
+      for (let i=0; i<flakeCount; i++){
+        const el = document.createElement('div');
+        el.className = 'flake';
+        el.textContent = flakeChars[Math.floor(Math.random()*flakeChars.length)];
+        const size = 10 + Math.random()*14;
+        const left = Math.random()*100;
+        const fallDur = 8 + Math.random()*10;
+        const swayDur = 3 + Math.random()*5;
+        const delay = Math.random()*-fallDur;
+        el.style.fontSize = size+'px';
+        el.style.left = left+'%';
+        el.style.animationDuration = fallDur+'s, '+swayDur+'s';
+        el.style.animationDelay = delay+'s, '+(Math.random()*-swayDur)+'s';
+        snow.appendChild(el);
+      }
+
+      const prefersReducedMotion = (function(){
+        try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+        catch(e){ return false; }
+      })();
+
+      // --- State ---
+      const state = {
+        images: [], // {id, name, dataUrl}
+        audio: null, // {name, type, dataUrl}
+        slideDuration: 5,
+        kenBurns: !prefersReducedMotion,
+        transition: 'random',
+        lastGeneratedHtml: null,
+      };
+
+      // --- Elements ---
+      const imageUpload = document.getElementById('imageUpload');
+      const audioUpload = document.getElementById('audioUpload');
+      const audioStatus = document.getElementById('audioStatus');
+      const dropArea = document.getElementById('dropArea');
+
+      const imageGrid = document.getElementById('imageGrid');
+      const emptyState = document.getElementById('emptyState');
+
+      const durationRange = document.getElementById('durationRange');
+      const durationValue = document.getElementById('durationValue');
+
+      const kenBurnsToggle = document.getElementById('kenBurnsToggle');
+      const transitionSelect = document.getElementById('transitionSelect');
+
+      const generateBtn = document.getElementById('generateBtn');
+      const previewBtn = document.getElementById('previewBtn');
+      const exportVideoBtn = document.getElementById('exportVideoBtn');
+
+      const clearAllBtn = document.getElementById('clearAllBtn');
+      const counterText = document.getElementById('counterText');
+
+      // Export modal elements
+      const exportModal = document.getElementById('exportModal');
+      const exportCloseBtn = document.getElementById('exportCloseBtn');
+      const exportStartBtn = document.getElementById('exportStartBtn');
+      const exportCancelBtn = document.getElementById('exportCancelBtn');
+      const exportResSelect = document.getElementById('exportResSelect');
+      const exportFpsSelect = document.getElementById('exportFpsSelect');
+      const exportAudioToggle = document.getElementById('exportAudioToggle');
+      const exportBitrateSelect = document.getElementById('exportBitrateSelect');
+      const exportProgressWrap = document.getElementById('exportProgressWrap');
+      const exportProgressText = document.getElementById('exportProgressText');
+      const exportEtaText = document.getElementById('exportEtaText');
+      const exportProgressBar = document.getElementById('exportProgressBar');
+      const exportSupportLine = document.getElementById('exportSupportLine');
+
+      // Init controls
+      kenBurnsToggle.checked = state.kenBurns;
+      transitionSelect.value = state.transition;
+
+      function makeId(name){
+        try {
+          return (crypto.randomUUID ? crypto.randomUUID() : (name + '-' + Date.now() + '-' + Math.random().toString(16).slice(2)));
+        } catch(_) {
+          return name + '-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+        }
+      }
+
+      function readFileAsDataURL(file){
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function setBusy(isBusy){
+        generateBtn.disabled = isBusy || state.images.length === 0;
+        imageUpload.disabled = isBusy;
+        audioUpload.disabled = isBusy;
+        clearAllBtn.disabled = isBusy;
+        kenBurnsToggle.disabled = isBusy;
+        transitionSelect.disabled = isBusy;
+
+        previewBtn.disabled = isBusy || !state.lastGeneratedHtml;
+        exportVideoBtn.disabled = isBusy || state.images.length === 0 || !canExportVideo();
+
+        if (isBusy){
+          generateBtn.textContent = 'Создание...';
+        } else {
+          generateBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20 12v10H4V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M2 7h20v5H2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 22V7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 7c-2.2 0-4-1.3-4-3s1.8-3 4-3c1.3 0 2.5.5 3.2 1.3C16.5 1.5 17.7 1 19 1c2.2 0 4 1.3 4 3s-1.8 3-4 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Создать и Скачать HTML
+          `;
+        }
+      }
+
+      function updateCounter(){
+        counterText.textContent = 'Изображений: ' + state.images.length;
+      }
+
+      function renderGrid(){
+        updateCounter();
+        const hasImages = state.images.length > 0;
+        emptyState.style.display = hasImages ? 'none' : 'flex';
+        imageGrid.style.display = hasImages ? 'grid' : 'none';
+
+        generateBtn.disabled = state.images.length === 0;
+        previewBtn.disabled = !state.lastGeneratedHtml;
+        exportVideoBtn.disabled = state.images.length === 0 || !canExportVideo();
+
+        imageGrid.innerHTML = '';
+        if (!hasImages) return;
+
+        for (const img of state.images){
+          const item = document.createElement('div');
+          item.className = 'thumb';
+          item.draggable = true;
+          item.dataset.id = img.id;
+
+          const image = document.createElement('img');
+          image.src = img.dataUrl;
+          image.alt = img.name || 'image';
+
+          const overlay = document.createElement('div');
+          overlay.className = 'overlay';
+
+          const remove = document.createElement('button');
+          remove.className = 'remove-btn';
+          remove.type = 'button';
+          remove.title = 'Удалить';
+          remove.setAttribute('aria-label', 'Удалить ' + (img.name || 'изображение'));
+          remove.innerHTML = '&#10005;';
+
+          remove.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            state.images = state.images.filter(x => x.id !== img.id);
+            if (state.images.length === 0) state.lastGeneratedHtml = null;
+            renderGrid();
+            setBusy(false);
+          });
+
+          // Drag & drop reorder
+          item.addEventListener('dragstart', (e) => {
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', img.id);
+          });
+          item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            for (const el of imageGrid.querySelectorAll('.drop-target')){
+              el.classList.remove('drop-target');
+            }
+          });
+          item.addEventListener('dragenter', (e) => { e.preventDefault(); item.classList.add('drop-target'); });
+          item.addEventListener('dragleave', () => item.classList.remove('drop-target'));
+          item.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+          item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            item.classList.remove('drop-target');
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const targetId = item.dataset.id;
+            if (!draggedId || !targetId || draggedId === targetId) return;
+
+            const arr = [...state.images];
+            const from = arr.findIndex(x => x.id === draggedId);
+            const to = arr.findIndex(x => x.id === targetId);
+            if (from < 0 || to < 0) return;
+            const [moved] = arr.splice(from, 1);
+            arr.splice(to, 0, moved);
+            state.images = arr;
+            renderGrid();
+          });
+
+          item.appendChild(image);
+          item.appendChild(overlay);
+          item.appendChild(remove);
+
+          imageGrid.appendChild(item);
+        }
+      }
+
+      // --- Presentation HTML generator (Ken Burns + transitions + финальная задержка + fade-out) ---
+      // (Это ваш текущий генератор презентации. Видео-экспорт реализован в генераторе (ниже), чтобы не менять шаблон шоу.)
+      function generatePresentationHtml(images, audio, slideDurationSeconds, kenBurnsEnabled, transitionMode){
+        const slidesHtml = images.map((dataUrl, idx) => {
+          const active = idx === 0 ? 'active' : '';
+          return `<div class="slide ${active}" data-idx="${idx}"><img class="media" src="${dataUrl}" alt="Слайд ${idx+1}"></div>`;
+        }).join('');
+
+        const audioPlayer = audio
+          ? `<audio id="bg-music" loop preload="metadata">
+              <source src="${audio.dataUrl}" type="${audio.type || 'audio/mpeg'}">
+            </audio>`
+          : '';
+
+        // iOS/WebView audio unlock helper (small silent WAV)
+        const iosSilenceDataUrl = "data:audio/wav;base64,UklGRlYAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YTIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        const iosSilencePlayer = audio
+          ? `<audio id="ios-silence" loop preload="auto" style="display:none">
+              <source src="${iosSilenceDataUrl}" type="audio/wav">
+            </audio>`
+          : '';
+
+        return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Новогодняя Презентация</title>
+  <style>
+    :root {
+      --nav-button-bg: rgba(0, 0, 0, 0.30);
+      --nav-button-hover-bg: rgba(0, 0, 0, 0.62);
+      --nav-button-color: rgba(255, 255, 255, 0.74);
+      --nav-button-hover-color: #ffffff;
+
+      --transDur: 900ms;
+      --slideSec: ${slideDurationSeconds};
+    }
+    html, body{
+      margin:0;
+      padding:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      background:#000;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: #fff;
+    }
+    .slider-container{
+      position:relative;
+      width:100%;
+      height:100%;
+      background:#000;
+      perspective: 900px;
+    }
+
+    .slide{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:0;
+      z-index:1;
+      will-change: opacity, transform, filter;
+    }
+    .slide.active{ opacity:1; z-index:2; }
+    .slide.leaving{ opacity:1; z-index:3; }
+    .slide.entering{ opacity:1; z-index:4; }
+
+    .media{
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      user-select:none;
+      pointer-events:none;
+      will-change: transform, filter, opacity;
+      transform: translate3d(0,0,0) scale(1);
+    }
+
+    /* --- Ken Burns --- */
+    .kb-on .media.kb-anim{
+      animation: kenburns var(--slideSec) linear both;
+    }
+    @keyframes kenburns{
+      from{
+        transform: translate3d(var(--kb-from-x, 0%), var(--kb-from-y, 0%), 0) scale(var(--kb-from-scale, 1.04));
+      }
+      to{
+        transform: translate3d(var(--kb-to-x, 0%), var(--kb-to-y, 0%), 0) scale(var(--kb-to-scale, 1.14));
+      }
+    }
+
+    /* --- Transitions --- */
+    .tr-fade.entering{ animation: trFadeIn var(--transDur) ease both; }
+    .tr-fade.leaving{ animation: trFadeOut var(--transDur) ease both; }
+    @keyframes trFadeIn{ from{opacity:0} to{opacity:1} }
+    @keyframes trFadeOut{ from{opacity:1} to{opacity:0} }
+
+    .tr-dissolve.entering{ animation: trDissolveIn 650ms ease both; }
+    .tr-dissolve.leaving{ animation: trDissolveOut 650ms ease both; }
+    @keyframes trDissolveIn{ from{opacity:0} to{opacity:1} }
+    @keyframes trDissolveOut{ from{opacity:1} to{opacity:0} }
+
+    .tr-blur-fade.entering{ animation: trBlurIn var(--transDur) ease both; }
+    .tr-blur-fade.leaving{ animation: trBlurOut var(--transDur) ease both; }
+    @keyframes trBlurIn{
+      from{ opacity:0; filter: blur(16px); transform: translate3d(0,0,0) scale(1.03); }
+      to{ opacity:1; filter: blur(0px); transform: translate3d(0,0,0) scale(1); }
+    }
+    @keyframes trBlurOut{
+      from{ opacity:1; filter: blur(0px); transform: translate3d(0,0,0) scale(1); }
+      to{ opacity:0; filter: blur(14px); transform: translate3d(0,0,0) scale(0.99); }
+    }
+
+    .tr-slide.entering{ animation: trSlideIn var(--transDur) cubic-bezier(.2,.8,.2,1) both; }
+    .tr-slide.leaving{ animation: trSlideOut var(--transDur) cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes trSlideIn{
+      from{ opacity:0; transform: translate3d(8%,0,0); }
+      to{ opacity:1; transform: translate3d(0,0,0); }
+    }
+    @keyframes trSlideOut{
+      from{ opacity:1; transform: translate3d(0,0,0); }
+      to{ opacity:0; transform: translate3d(-8%,0,0); }
+    }
+
+    .tr-zoom-cross.entering{ animation: trZoomIn var(--transDur) cubic-bezier(.2,.8,.2,1) both; }
+    .tr-zoom-cross.leaving{ animation: trZoomOut var(--transDur) cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes trZoomIn{
+      from{ opacity:0; transform: translate3d(0,0,0) scale(1.08); }
+      to{ opacity:1; transform: translate3d(0,0,0) scale(1); }
+    }
+    @keyframes trZoomOut{
+      from{ opacity:1; transform: translate3d(0,0,0) scale(1); }
+      to{ opacity:0; transform: translate3d(0,0,0) scale(0.98); }
+    }
+
+    /* Film cut */
+    #flash{
+      position:absolute;
+      inset:0;
+      background: rgba(255,255,255,0.0);
+      z-index:6;
+      pointer-events:none;
+      opacity:0;
+    }
+    #flash.fire{ animation: flash 280ms ease-out both; }
+    @keyframes flash{
+      0%{ opacity:0; background: rgba(255,255,255,0.0); }
+      35%{ opacity:1; background: rgba(255,255,255,0.95); }
+      100%{ opacity:0; background: rgba(255,255,255,0.0); }
+    }
+    .tr-film-cut.entering{ animation: trCutIn 180ms linear both; }
+    .tr-film-cut.leaving{ animation: trCutOut 120ms linear both; }
+    @keyframes trCutIn{ from{ opacity:0; filter: contrast(1.08) saturate(1.05);} to{ opacity:1; filter:none;} }
+    @keyframes trCutOut{ from{ opacity:1; } to{ opacity:0; } }
+
+    /* Polaroid flip */
+    .tr-polaroid-flip.entering{
+      transform-style: preserve-3d;
+      animation: trFlipIn var(--transDur) cubic-bezier(.2,.8,.2,1) both;
+    }
+    .tr-polaroid-flip.leaving{
+      transform-style: preserve-3d;
+      animation: trFlipOut var(--transDur) cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes trFlipIn{
+      from{ opacity:0; transform: rotateY(70deg) translate3d(0,0,0) scale(0.98); filter: blur(6px); }
+      to{ opacity:1; transform: rotateY(0deg) translate3d(0,0,0) scale(1); filter: blur(0px); }
+    }
+    @keyframes trFlipOut{
+      from{ opacity:1; transform: rotateY(0deg) translate3d(0,0,0) scale(1); filter: blur(0px); }
+      to{ opacity:0; transform: rotateY(-70deg) translate3d(0,0,0) scale(0.98); filter: blur(6px); }
+    }
+
+    /* --- UI --- */
+    .nav-button{
+      position:absolute;
+      top:50%;
+      transform: translateY(-50%);
+      background-color: var(--nav-button-bg);
+      color: var(--nav-button-color);
+      border:none;
+      cursor:pointer;
+      z-index:7;
+      font-size:2rem;
+      font-weight:800;
+      transition: all 0.25s ease;
+      border-radius: 999px;
+      width: 60px;
+      height: 60px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+    }
+    .nav-button:hover{
+      background-color: var(--nav-button-hover-bg);
+      color: var(--nav-button-hover-color);
+    }
+    .nav-button:disabled{
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .prev{ left: 15px; }
+    .next{ right: 15px; }
+
+    .credits{
+      position:absolute;
+      bottom: 20px;
+      left:50%;
+      transform: translateX(-50%);
+      font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+      font-size: 1.6rem;
+      color: rgba(255,255,255,0.86);
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+      z-index:7;
+      opacity:0;
+      animation: fadeIn 2s 1s forwards;
+      pointer-events:none;
+    }
+    @keyframes fadeIn{ to{ opacity:1; } }
+
+    .progress-bar-container{
+      position:absolute;
+      bottom:0;
+      left:0;
+      width:100%;
+      height: 5px;
+      background: rgba(255,255,255,0.20);
+      z-index:7;
+    }
+    .progress-bar{ height:100%; width:0; background: rgba(255,255,255,0.92); }
+    .progress-bar.animate{ animation: progressBarAnimation var(--slideSec)s linear forwards; }
+    @keyframes progressBarAnimation{ from{ width: 0; } to{ width: 100%; } }
+
+    /* --- Sound control (bigger + label) --- */
+    #sound-control{
+      position:absolute;
+      bottom: 22px;
+      right: 22px;
+      z-index: 8;
+      display:flex;
+      flex-direction: column;
+      align-items:center;
+      gap: 8px;
+    }
+    #player-control{
+      background: var(--nav-button-bg);
+      color: var(--nav-button-color);
+      border:none;
+      width: 88px;
+      height: 88px;
+      border-radius: 999px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition: background 0.25s ease, transform 0.12s ease;
+      user-select:none;
+    }
+    #player-control:hover{ background: var(--nav-button-hover-bg); transform: translateY(-1px); }
+    #sound-label{
+      font-size: 12px;
+      letter-spacing: 0.2px;
+      color: rgba(255,255,255,0.78);
+      text-shadow: 0 2px 12px rgba(0,0,0,0.65);
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 6px 10px;
+      line-height: 1;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+    #sound-label.hidden{ opacity: 0; }
+
+    #hint{
+      position:absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.35);
+      color: rgba(255,255,255,0.8);
+      font-size: 12px;
+      z-index: 8;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #hint.visible{ opacity: 1; }
+
+    /* --- Start overlay (mobile autoplay gate) --- */
+    #start-overlay{
+      position:absolute;
+      inset:0;
+      z-index: 9;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 18px;
+    }
+    #start-overlay.visible{ display:flex; }
+    #start-card{
+      width: min(420px, calc(100vw - 36px));
+      border-radius: 18px;
+      padding: 18px 16px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      text-align:center;
+    }
+    #start-card h2{
+      margin:0 0 8px;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+    #start-card p{
+      margin:0 0 12px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.4;
+    }
+    #start-actions{
+      display:flex;
+      gap: 10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top: 12px;
+    }
+    .start-btn{
+      border: none;
+      cursor:pointer;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-weight: 800;
+      background: rgba(255,255,255,0.92);
+      color: #111;
+      min-width: 220px;
+      transition: transform 0.12s ease, filter 0.2s ease, background 0.2s ease;
+    }
+    .start-btn:active{ transform: translateY(1px); }
+    .start-btn:hover{ filter: brightness(1.03); }
+    .start-btn.secondary{
+      background: rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.92);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    #start-error{
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255,200,200,0.95);
+      min-height: 16px;
+    }
+
+    .native-audio-fallback{
+      display:none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.14);
+      text-align:left;
+    }
+    .native-audio-fallback.visible{ display:block; }
+    .native-audio-note{
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+    .native-audio-hint{
+      margin-top: 6px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.35;
+    }
+    #native-audio-slot audio{
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* --- No-JS / iOS Quick Look notice --- */
+    #nojs-overlay{
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.78);
+      padding: 18px;
+    }
+    body.js-ok #nojs-overlay{ display: none; }
+    #nojs-card{
+      width: min(560px, calc(100vw - 36px));
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 16px;
+      padding: 16px 16px 14px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+    }
+    #nojs-card h2{
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+    #nojs-card p{
+      margin: 0 0 10px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.4;
+      font-size: 13px;
+    }
+    #nojs-card ol{
+      margin: 0 0 0 18px;
+      padding: 0;
+      color: rgba(255,255,255,0.82);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    #nojs-card li{ margin: 4px 0; }
+    #nojs-card .small{
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.35;
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      :root{ --transDur: 1ms; }
+      .kb-on .media.kb-anim{ animation: none !important; }
+      .entering, .leaving{ animation: none !important; }
+      #flash.fire{ animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="nojs-overlay" aria-live="polite">
+    <div id="nojs-card">
+      <h2>Не запускается?</h2>
+      <p>Если на экране ничего не меняется и кнопки не нажимаются, значит JavaScript не выполняется. На iPhone это часто бывает во встроенном предпросмотре (Quick Look) в «Файлах», «Почте» или мессенджерах — там JavaScript отключён.</p>
+      <ol>
+        <li>Нажмите «Поделиться».</li>
+        <li>Выберите «Открыть в Safari» (или «Открыть в…» → Safari).</li>
+        <li>После открытия в Safari нажмите «▶ включить звук» (или «Начать без звука»).</li>
+      </ol>
+      <div class="small">Если вы уже в Safari, проверьте: Настройки → Safari → Дополнения/Advanced → JavaScript (должен быть включён).</div>
+    </div>
+  </div>
+
+  <div class="slider-container ${kenBurnsEnabled ? 'kb-on' : ''}" id="slider" data-transition-mode="${transitionMode}">
+    ${slidesHtml}
+    <div id="flash" aria-hidden="true"></div>
+
+    <div class="progress-bar-container"><div id="progress-bar" class="progress-bar"></div></div>
+
+    <button class="nav-button prev" aria-label="Предыдущий слайд">&#10094;</button>
+    <button class="nav-button next" aria-label="Следующий слайд">&#10095;</button>
+
+    <div class="credits">С Новым Годом!</div>
+
+    ${audio ? `
+      <div id="hint" class="visible">Если музыка не стартовала — нажмите ▶</div>
+      <div id="start-overlay" class="start-overlay" aria-live="polite">
+        <div id="start-card">
+          <h2>Нажмите, чтобы начать</h2>
+          <p>На iPhone и других мобильных браузерах музыка обычно не может стартовать автоматически — нужен тап.</p>
+          <div id="start-actions">
+            <button id="start-sound" class="start-btn">▶ включить звук</button>
+            <button id="start-nosound" class="start-btn secondary">Начать без звука</button>
+          </div>
+          <div id="start-error"></div>
+          <div id="native-audio-fallback" class="native-audio-fallback">
+            <div class="native-audio-note">Если встроенный просмотрщик блокирует запуск через кнопку, нажмите <b>Play</b> на плеере ниже:</div>
+            <div id="native-audio-slot"></div>
+            <div class="native-audio-hint">Подсказка: если iPhone в беззвучном режиме (переключатель сбоку), звук может быть выключен.</div>
+          </div>
+        </div>
+      </div>
+      <div id="sound-control">
+        <button id="player-control" aria-label="Пауза/Воспроизведение">
+          <svg id="icon-pause" xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" style="display:none" viewBox="0 0 16 16">
+            <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/>
+          </svg>
+          <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"/>
+          </svg>
+        </button>
+        <div id="sound-label">включить звук</div>
+      </div>
+    ` : ''}
+
+  </div>
+
+  ${audioPlayer}
+  ${iosSilencePlayer}
+
+  <script>
+    (function(){
+      try{ document.body.classList.add('js-ok'); }catch(e){}
+      const slider = document.getElementById('slider');
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const prevButton = document.querySelector('.prev');
+      const nextButton = document.querySelector('.next');
+      const progressBar = document.getElementById('progress-bar');
+      const flash = document.getElementById('flash');
+
+      const music = document.getElementById('bg-music');
+      const playerControl = document.getElementById('player-control');
+      const iconPause = document.getElementById('icon-pause');
+      const iconPlay = document.getElementById('icon-play');
+      const hint = document.getElementById('hint');
+      const soundLabel = document.getElementById('sound-label');
+      const startOverlay = document.getElementById('start-overlay');
+      const startSoundBtn = document.getElementById('start-sound');
+      const startNoSoundBtn = document.getElementById('start-nosound');
+      const startError = document.getElementById('start-error');
+      const silence = document.getElementById('ios-silence');
+      const nativeAudioFallback = document.getElementById('native-audio-fallback');
+      const nativeAudioSlot = document.getElementById('native-audio-slot');
+
+      const musicHome = music ? music.parentElement : null;
+      const musicHomeNext = music ? music.nextSibling : null;
+
+      const isIOS = (function(){
+        const ua = navigator.userAgent || '';
+        const iOS = /iP(hone|ad|od)/.test(ua);
+        const iPadOS = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        return iOS || iPadOS;
+      })();
+
+      let didUnlockHack = false;
+      let audioCtx = null;
+
+      function runIOSUnlockHack(){
+        if (!isIOS) return;
+        if (didUnlockHack) return;
+        didUnlockHack = true;
+
+        try{
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC){
+            audioCtx = audioCtx || new AC();
+            if (audioCtx.state === 'suspended'){
+              audioCtx.resume().catch(() => {});
+            }
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0;
+            source.connect(gain);
+            gain.connect(audioCtx.destination);
+            source.start(0);
+            source.stop(0.01);
+          }
+        } catch(e){}
+
+        if (silence){
+          try{
+            silence.muted = false;
+            silence.volume = 0;
+            silence.play().catch(() => {});
+          } catch(e){}
+        }
+      }
+
+      function restoreMusicHome(){
+        if (!music || !musicHome) return;
+        if (music.parentElement === musicHome) return;
+        try{
+          if (musicHomeNext){
+            musicHome.insertBefore(music, musicHomeNext);
+          } else {
+            musicHome.appendChild(music);
+          }
+        } catch(e){}
+      }
+
+      function enableNativeAudioFallback(){
+        if (!nativeAudioFallback || !music) return;
+        nativeAudioFallback.classList.add('visible');
+        try { music.controls = true; } catch(e){}
+        if (nativeAudioSlot && music.parentElement !== nativeAudioSlot){
+          try { nativeAudioSlot.appendChild(music); } catch(e){}
+        }
+      }
+
+      const prefersReducedMotion = (function(){
+        try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+        catch(e){ return false; }
+      })();
+
+      const mode = (slider && slider.dataset && slider.dataset.transitionMode) ? slider.dataset.transitionMode : 'fade';
+      const transitions = ['fade','dissolve','blur-fade','slide','zoom-cross','film-cut','polaroid-flip'];
+
+      let currentSlide = 0;
+      let timerNext = null;
+      let timerFadeStart = null;
+      let timerEnd = null;
+      let fadeRaf = null;
+
+      const normalSlideMs = Math.round(${slideDurationSeconds} * 1000);
+      const lastSlideMs = 10000;
+      const fadeStartOnLastMs = 3000;
+      const transDurMs = prefersReducedMotion ? 1 : 900;
+
+      function isLast(index){ return index >= slides.length - 1; }
+
+      function clearTimers(){
+        if (timerNext) clearTimeout(timerNext);
+        if (timerFadeStart) clearTimeout(timerFadeStart);
+        if (timerEnd) clearTimeout(timerEnd);
+        timerNext = timerFadeStart = timerEnd = null;
+        cancelFade();
+      }
+
+      function cancelFade(){
+        if (fadeRaf){
+          cancelAnimationFrame(fadeRaf);
+          fadeRaf = null;
+        }
+      }
+
+      function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+
+      function setVolume(v){
+        if (!music) return;
+        music.volume = clamp01(v);
+      }
+
+      function fadeVolumeTo(target, durationMs){
+        if (!music) return;
+        cancelFade();
+        const startVol = clamp01(music.volume);
+        const endVol = clamp01(target);
+        const start = performance.now();
+        const dur = Math.max(1, durationMs);
+
+        function step(now){
+          const t = Math.min(1, (now - start) / dur);
+          const v = startVol + (endVol - startVol) * t;
+          setVolume(v);
+          if (t < 1){
+            fadeRaf = requestAnimationFrame(step);
+          } else {
+            fadeRaf = null;
+          }
+        }
+        fadeRaf = requestAnimationFrame(step);
+      }
+
+      function pickTransition(){
+        if (prefersReducedMotion) return 'fade';
+        if (mode === 'random'){
+          return transitions[Math.floor(Math.random()*transitions.length)];
+        }
+        if (transitions.includes(mode)) return mode;
+        return 'fade';
+      }
+
+      function assignKenBurnsIfNeeded(){
+        if (!slider.classList.contains('kb-on')) return;
+        if (prefersReducedMotion) return;
+
+        const presets = [
+          {fx:'-2%', fy:'-2%', tx:'2%', ty:'2%', fs:1.04, ts:1.15},
+          {fx:'2%', fy:'-2%', tx:'-2%', ty:'2%', fs:1.05, ts:1.16},
+          {fx:'-2%', fy:'2%', tx:'2%', ty:'-2%', fs:1.05, ts:1.16},
+          {fx:'2%', fy:'2%', tx:'-2%', ty:'-2%', fs:1.04, ts:1.15},
+          {fx:'0%', fy:'-3%', tx:'0%', ty:'3%', fs:1.05, ts:1.14},
+          {fx:'-3%', fy:'0%', tx:'3%', ty:'0%', fs:1.05, ts:1.14},
+          {fx:'0%', fy:'0%', tx:'0%', ty:'0%', fs:1.06, ts:1.18}
+        ];
+
+        slides.forEach((slide) => {
+          const media = slide.querySelector('.media');
+          if (!media) return;
+          const p = presets[Math.floor(Math.random()*presets.length)];
+          media.style.setProperty('--kb-from-x', p.fx);
+          media.style.setProperty('--kb-from-y', p.fy);
+          media.style.setProperty('--kb-to-x', p.tx);
+          media.style.setProperty('--kb-to-y', p.ty);
+          media.style.setProperty('--kb-from-scale', String(p.fs));
+          media.style.setProperty('--kb-to-scale', String(p.ts));
+        });
+      }
+
+      function startKenBurns(slide){
+        if (!slider.classList.contains('kb-on')) return;
+        if (prefersReducedMotion) return;
+        const media = slide.querySelector('.media');
+        if (!media) return;
+        media.classList.remove('kb-anim');
+        void media.offsetWidth;
+        media.classList.add('kb-anim');
+      }
+
+      function resetProgressBar(){
+        if (!progressBar) return;
+        if (slides.length <= 1) {
+          progressBar.classList.remove('animate');
+          progressBar.style.width = '100%';
+          return;
+        }
+        progressBar.classList.remove('animate');
+        void progressBar.offsetWidth;
+        progressBar.classList.add('animate');
+      }
+
+      function setSlideSecondsForIndex(index){
+        const sec = isLast(index) ? 10 : ${slideDurationSeconds};
+        slider.style.setProperty('--slideSec', String(sec));
+      }
+
+      function cleanupTransientClasses(slide){
+        slide.classList.remove('entering','leaving');
+        for (const t of transitions){
+          slide.classList.remove('tr-'+t);
+        }
+      }
+
+      function fireFlash(){
+        if (!flash || prefersReducedMotion) return;
+        flash.classList.remove('fire');
+        void flash.offsetWidth;
+        flash.classList.add('fire');
+      }
+
+      function updateNavButtons(){
+        if (!prevButton || !nextButton) return;
+        prevButton.disabled = (currentSlide <= 0);
+        nextButton.disabled = (currentSlide >= slides.length - 1);
+      }
+
+      function updatePlayerUI(){
+        if (!music || !iconPause || !iconPlay) return;
+        const paused = music.paused;
+
+        iconPause.style.display = paused ? 'none' : 'block';
+        iconPlay.style.display = paused ? 'block' : 'none';
+
+        if (soundLabel){
+          soundLabel.classList.toggle('hidden', !paused);
+        }
+        if (hint){
+          hint.classList.toggle('visible', paused);
+        }
+      }
+
+      function scheduleLastSlideEnding(){
+        const lastStart = performance.now();
+        const lastEndAt = lastStart + lastSlideMs;
+
+        timerFadeStart = setTimeout(() => {
+          if (!music) return;
+
+          const now = performance.now();
+          const remaining = Math.max(0, lastEndAt - now);
+
+          if (remaining > 0){
+            fadeVolumeTo(0, remaining);
+          }
+        }, fadeStartOnLastMs);
+
+        timerEnd = setTimeout(() => {
+          if (music){
+            setVolume(0);
+            try { music.pause(); } catch(e){}
+            updatePlayerUI();
+          }
+          if (silence){
+            try { silence.pause(); } catch(e){}
+          }
+          updateNavButtons();
+          if (nextButton) nextButton.disabled = true;
+          if (progressBar){
+            progressBar.classList.remove('animate');
+            progressBar.style.width = '100%';
+          }
+        }, lastSlideMs);
+      }
+
+      function scheduleAutoAdvance(){
+        clearTimers();
+        updateNavButtons();
+        setSlideSecondsForIndex(currentSlide);
+        resetProgressBar();
+        startKenBurns(slides[currentSlide]);
+
+        if (slides.length === 0) return;
+
+        if (isLast(currentSlide)){
+          scheduleLastSlideEnding();
+          return;
+        }
+
+        timerNext = setTimeout(() => {
+          goTo(currentSlide + 1, pickTransition(), true);
+        }, normalSlideMs);
+      }
+
+      function showSlide(index, transition){
+        if (slides.length === 0) return;
+
+        if (index === currentSlide){
+          scheduleAutoAdvance();
+          return;
+        }
+
+        const prev = slides[currentSlide];
+        const next = slides[index];
+
+        cleanupTransientClasses(prev);
+        cleanupTransientClasses(next);
+
+        const trClass = 'tr-' + transition;
+
+        prev.classList.remove('active');
+        prev.classList.add('leaving', trClass);
+
+        next.classList.add('active', 'entering', trClass);
+
+        if (transition === 'film-cut') fireFlash();
+
+        startKenBurns(next);
+
+        window.setTimeout(() => {
+          cleanupTransientClasses(prev);
+          cleanupTransientClasses(next);
+          prev.classList.remove('active');
+        }, transDurMs + 60);
+
+        currentSlide = index;
+        scheduleAutoAdvance();
+      }
+
+      function goTo(index, transition, isAuto){
+        if (index < 0 || index >= slides.length) return;
+
+        const leavingLast = isLast(currentSlide) && !isLast(index);
+        if (leavingLast && music){
+          cancelFade();
+          setVolume(1);
+        }
+
+        showSlide(index, transition || pickTransition());
+      }
+
+      function handleManualNavigation(offset){
+        const nextIdx = currentSlide + offset;
+        if (nextIdx < 0 || nextIdx >= slides.length) return;
+        goTo(nextIdx, pickTransition(), false);
+      }
+
+      function togglePlayPause(){
+        if (!music) return;
+
+        if (music.paused){
+          runIOSUnlockHack();
+          music.play().catch(() => {/* ignored */});
+        } else {
+          music.pause();
+        }
+      }
+
+      nextButton && nextButton.addEventListener('click', () => handleManualNavigation(1));
+      prevButton && prevButton.addEventListener('click', () => handleManualNavigation(-1));
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') handleManualNavigation(1);
+        if (e.key === 'ArrowLeft') handleManualNavigation(-1);
+        if (e.key === ' ' && music){
+          e.preventDefault();
+          togglePlayPause();
+        }
+      });
+
+      if (music){
+        setVolume(1);
+
+        music.addEventListener('play', () => {
+          updatePlayerUI();
+          if (!started && !starting){
+            restoreMusicHome();
+            hideStartOverlay();
+            beginShow();
+          }
+        });
+        music.addEventListener('pause', updatePlayerUI);
+
+        if (playerControl){
+          playerControl.addEventListener('click', togglePlayPause);
+        }
+
+        updatePlayerUI();
+      }
+
+      assignKenBurnsIfNeeded();
+      updateNavButtons();
+      setSlideSecondsForIndex(0);
+
+      if (progressBar){
+        progressBar.classList.remove('animate');
+        progressBar.style.width = '0%';
+      }
+
+      let started = false;
+      let starting = false;
+
+      function beginShow(){
+        if (started) return;
+        started = true;
+
+        restoreMusicHome();
+        if (nativeAudioFallback) nativeAudioFallback.classList.remove('visible');
+
+        if (startOverlay) startOverlay.classList.remove('visible');
+        scheduleAutoAdvance();
+        updateNavButtons();
+      }
+
+      function showStartOverlay(message){
+        if (startOverlay) startOverlay.classList.add('visible');
+        if (startError) startError.textContent = message || '';
+      }
+
+      function hideStartOverlay(){
+        if (startOverlay) startOverlay.classList.remove('visible');
+        if (startError) startError.textContent = '';
+      }
+
+      function startWithSound(){
+        if (started || starting) return;
+        starting = true;
+
+        if (!music){
+          starting = false;
+          hideStartOverlay();
+          beginShow();
+          return;
+        }
+
+        if (startError) startError.textContent = '';
+
+        cancelFade();
+        setVolume(1);
+
+        try { music.currentTime = 0; } catch(e){}
+        try { music.muted = false; } catch(e){}
+
+        runIOSUnlockHack();
+
+        const p = music.play();
+        if (p && typeof p.then === 'function'){
+          p.then(() => {
+            starting = false;
+            updatePlayerUI();
+            hideStartOverlay();
+            beginShow();
+          }).catch(() => {
+            starting = false;
+            enableNativeAudioFallback();
+            showStartOverlay('Не удалось включить звук этой кнопкой. Такое бывает во встроенном просмотрщике iOS или внутри мессенджера. Попробуйте: 1) нажмите Play на плеере ниже, 2) либо откройте файл в Safari.');
+            updatePlayerUI();
+          });
+        } else {
+          starting = false;
+          updatePlayerUI();
+          hideStartOverlay();
+          beginShow();
+        }
+      }
+
+      function startWithoutSound(){
+        if (started || starting) return;
+        starting = true;
+
+        if (music){
+          try { music.pause(); } catch(e){}
+          updatePlayerUI();
+        }
+
+        starting = false;
+        hideStartOverlay();
+        beginShow();
+      }
+
+      if (startSoundBtn){
+        startSoundBtn.addEventListener('touchend', (e) => { e.preventDefault(); startWithSound(); }, {passive:false});
+        startSoundBtn.addEventListener('pointerup', (e) => { e.preventDefault(); startWithSound(); }, {passive:false});
+        startSoundBtn.addEventListener('click', (e) => { e.preventDefault(); startWithSound(); }, {passive:false});
+      }
+      if (startNoSoundBtn){
+        startNoSoundBtn.addEventListener('touchend', (e) => { e.preventDefault(); startWithoutSound(); }, {passive:false});
+        startNoSoundBtn.addEventListener('pointerup', (e) => { e.preventDefault(); startWithoutSound(); }, {passive:false});
+        startNoSoundBtn.addEventListener('click', (e) => { e.preventDefault(); startWithoutSound(); }, {passive:false});
+      }
+
+      if (music){
+        const ap = music.play();
+        if (ap && typeof ap.then === 'function'){
+          ap.then(() => {
+            updatePlayerUI();
+            beginShow();
+          }).catch(() => {
+            try { music.pause(); } catch(e){}
+            updatePlayerUI();
+            showStartOverlay();
+          });
+        } else {
+          beginShow();
+        }
+      } else {
+        beginShow();
+      }
+    })();
+  <\/script>
+</body>
+</html>`;
+      }
+
+      function downloadTextFile(filename, content){
+        const blob = new Blob([content], {type: 'text/html'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // --- Handlers ---
+      async function addImageFiles(fileList){
+        const files = Array.from(fileList || []).filter(f => f && f.type && f.type.startsWith('image/'));
+        if (files.length === 0) return;
+
+        setBusy(true);
+        try{
+          const promises = files.map(async (file) => {
+            const dataUrl = await readFileAsDataURL(file);
+            return { id: makeId(file.name), name: file.name, dataUrl };
+          });
+          const newImages = await Promise.all(promises);
+          state.images = state.images.concat(newImages);
+          renderGrid();
+        } catch(err){
+          console.error(err);
+          alert('Не удалось прочитать один или несколько файлов изображений.');
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function setAudioFile(file){
+        if (!file) return;
+        setBusy(true);
+        try{
+          const dataUrl = await readFileAsDataURL(file);
+          state.audio = { name: file.name, type: file.type || 'audio/mpeg', dataUrl };
+          audioStatus.style.display = 'block';
+          audioStatus.textContent = 'Загружено: ' + state.audio.name;
+        } catch(err){
+          console.error(err);
+          alert('Не удалось прочитать аудиофайл.');
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      imageUpload.addEventListener('change', (e) => {
+        addImageFiles(e.target.files);
+        e.target.value = '';
+      });
+
+      audioUpload.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (files && files.length > 0) setAudioFile(files[0]);
+        e.target.value = '';
+      });
+
+      durationRange.addEventListener('input', () => {
+        state.slideDuration = Number(durationRange.value || 5);
+        durationValue.textContent = state.slideDuration + ' сек.';
+      });
+
+      kenBurnsToggle.addEventListener('change', () => {
+        state.kenBurns = !!kenBurnsToggle.checked;
+      });
+
+      transitionSelect.addEventListener('change', () => {
+        state.transition = String(transitionSelect.value || 'fade');
+      });
+
+      // Drag & drop area for image files
+      dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('dragover'); });
+      dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+      dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('dragover');
+        if (e.dataTransfer && e.dataTransfer.files){
+          addImageFiles(e.dataTransfer.files);
+        }
+      });
+
+      clearAllBtn.addEventListener('click', () => {
+        if (!confirm('Очистить все загруженные изображения и музыку?')) return;
+        state.images = [];
+        state.audio = null;
+        state.lastGeneratedHtml = null;
+        audioStatus.style.display = 'none';
+        audioStatus.textContent = '';
+        renderGrid();
+        setBusy(false);
+      });
+
+      generateBtn.addEventListener('click', () => {
+        if (state.images.length === 0){
+          alert('Пожалуйста, загрузите хотя бы одно изображение.');
+          return;
+        }
+        setBusy(true);
+        try{
+          const slideSeconds = Number(state.slideDuration || 5);
+          const imgs = state.images.map(x => x.dataUrl);
+          const html = generatePresentationHtml(
+            imgs,
+            state.audio,
+            slideSeconds,
+            state.kenBurns,
+            state.transition
+          );
+          state.lastGeneratedHtml = html;
+          previewBtn.disabled = false;
+          downloadTextFile('new-year-presentation.html', html);
+        } catch(err){
+          console.error(err);
+          alert('Произошла ошибка при создании файла. Пожалуйста, попробуйте снова.');
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      previewBtn.addEventListener('click', () => {
+        if (!state.lastGeneratedHtml) return;
+        const blob = new Blob([state.lastGeneratedHtml], {type: 'text/html'});
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      });
+
+      // -------------------------
+      // Video Export (Canvas + MediaRecorder)
+      // -------------------------
+      function isSafariLike(){
+        const ua = navigator.userAgent || '';
+        const isSafari = /safari/i.test(ua) && !/chrome|crios|android/i.test(ua);
+        const isIOS = /iP(hone|ad|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        return isSafari || isIOS;
+      }
+
+      function getBestRecorderType(){
+        if (!window.MediaRecorder) return null;
+        const hasIsType = typeof MediaRecorder.isTypeSupported === 'function';
+        const safari = isSafariLike();
+
+        const webmFirst = [
+          { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+          { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+          { mime: 'video/webm', ext: 'webm' },
+          { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+          { mime: 'video/mp4', ext: 'mp4' },
+        ];
+        const mp4First = [
+          { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+          { mime: 'video/mp4', ext: 'mp4' },
+          { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+          { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+          { mime: 'video/webm', ext: 'webm' },
+        ];
+
+        const list = safari ? mp4First : webmFirst;
+
+        if (hasIsType){
+          for (const c of list){
+            if (MediaRecorder.isTypeSupported(c.mime)) return c;
+          }
+          // Some browsers allow empty mimeType -> they pick a default.
+          return { mime: '', ext: 'webm' };
+        }
+        return { mime: '', ext: safari ? 'mp4' : 'webm' };
+      }
+
+      function canExportVideo(){
+        const t = getBestRecorderType();
+        return !!(t && typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype && HTMLCanvasElement.prototype.captureStream);
+      }
+
+      function openExportModal(){
+        exportModal.classList.add('visible');
+        exportModal.setAttribute('aria-hidden', 'false');
+        updateExportSupportLine();
+        exportProgressWrap.style.display = 'none';
+        exportProgressBar.style.width = '0%';
+        exportEtaText.textContent = ' ';
+      }
+
+      function closeExportModal(){
+        exportModal.classList.remove('visible');
+        exportModal.setAttribute('aria-hidden', 'true');
+      }
+
+      function updateExportSupportLine(){
+        const t = getBestRecorderType();
+        if (!window.MediaRecorder){
+          exportSupportLine.innerHTML = 'Ваш браузер не поддерживает <b>MediaRecorder</b>. Попробуйте Chrome/Edge на ПК.';
+          exportStartBtn.disabled = true;
+          exportAudioToggle.disabled = true;
+          return;
+        }
+        if (!HTMLCanvasElement.prototype.captureStream){
+          exportSupportLine.innerHTML = 'Ваш браузер не поддерживает <b>canvas.captureStream()</b>. Попробуйте Chrome/Edge на ПК.';
+          exportStartBtn.disabled = true;
+          exportAudioToggle.disabled = true;
+          return;
+        }
+        exportStartBtn.disabled = false;
+        const fmt = t && t.mime ? t.mime : '(авто)';
+        const ext = t ? t.ext : 'webm';
+        exportSupportLine.innerHTML = 'Формат записи: <b>' + (ext.toUpperCase()) + '</b> (mime: <code class="kbd">' + fmt + '</code>).';
+        // Disable "include audio" if there is no audio loaded
+        exportAudioToggle.disabled = !state.audio;
+        exportAudioToggle.checked = !!state.audio;
+      }
+
+      exportVideoBtn.addEventListener('click', () => {
+        if (!canExportVideo()){
+          alert('Экспорт видео не поддерживается в этом браузере. Рекомендуется Chrome/Edge на ПК.');
+          return;
+        }
+        openExportModal();
+      });
+
+      exportCloseBtn.addEventListener('click', closeExportModal);
+      exportModal.addEventListener('click', (e) => {
+        if (e.target === exportModal) closeExportModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && exportModal.classList.contains('visible')){
+          closeExportModal();
+        }
+      });
+
+      function parseResolution(value){
+        const m = String(value || '').match(/^(\d+)x(\d+)$/);
+        if (!m) return {w:1280,h:720};
+        return {w: Number(m[1]), h: Number(m[2])};
+      }
+
+      function lerp(a,b,t){ return a + (b-a)*t; }
+      function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+      async function loadImagesForExport(dataUrls){
+        const imgs = [];
+        for (const src of dataUrls){
+          const img = new Image();
+          img.decoding = 'async';
+          img.src = src;
+          await new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error('Image load failed'));
+          });
+          // decode if available
+          if (img.decode){
+            try { await img.decode(); } catch(e){}
+          }
+          imgs.push(img);
+        }
+        return imgs;
+      }
+
+      function fitContain(imgW, imgH, W, H){
+        const s = Math.min(W / imgW, H / imgH);
+        return { w: imgW*s, h: imgH*s };
+      }
+      function fitCover(imgW, imgH, W, H){
+        const s = Math.max(W / imgW, H / imgH);
+        return { w: imgW*s, h: imgH*s };
+      }
+
+      const KB_PRESETS = [
+        {fx:-2, fy:-2, tx: 2, ty: 2, fs:1.04, ts:1.15},
+        {fx: 2, fy:-2, tx:-2, ty: 2, fs:1.05, ts:1.16},
+        {fx:-2, fy: 2, tx: 2, ty:-2, fs:1.05, ts:1.16},
+        {fx: 2, fy: 2, tx:-2, ty:-2, fs:1.04, ts:1.15},
+        {fx: 0, fy:-3, tx: 0, ty: 3, fs:1.05, ts:1.14},
+        {fx:-3, fy: 0, tx: 3, ty: 0, fs:1.05, ts:1.14},
+        {fx: 0, fy: 0, tx: 0, ty: 0, fs:1.06, ts:1.18},
+      ];
+
+      function chooseKbPreset(){
+        return KB_PRESETS[Math.floor(Math.random()*KB_PRESETS.length)];
+      }
+
+      function chooseTransition(mode){
+        const list = ['fade','dissolve','blur-fade','slide','zoom-cross','film-cut','polaroid-flip'];
+        if (!mode || mode === 'random') return list[Math.floor(Math.random()*list.length)];
+        if (list.includes(mode)) return mode;
+        return 'fade';
+      }
+
+      const TRANS_DUR = {
+        'fade': 0.9,
+        'dissolve': 0.65,
+        'blur-fade': 0.9,
+        'slide': 0.9,
+        'zoom-cross': 0.9,
+        'film-cut': 0.28,
+        'polaroid-flip': 0.9,
+      };
+
+      function drawVignette(ctx, W, H){
+        const g = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.2, W/2, H/2, Math.max(W,H)*0.62);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(1, 'rgba(0,0,0,0.38)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0,0,W,H);
+      }
+
+      function drawGreeting(ctx, W, H, t){
+        const a = clamp01((t - 1.0) / 2.0); // fade in after 1s
+        ctx.save();
+        ctx.globalAlpha = 0.86 * a;
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        const fontSize = Math.round(Math.min(W,H) * 0.045);
+        ctx.font = '700 ' + fontSize + 'px ui-serif, Georgia, "Times New Roman", Times, serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.70)';
+        ctx.shadowBlur = 14;
+        ctx.fillText('С Новым Годом!', W/2, H - Math.round(H*0.06));
+        ctx.restore();
+      }
+
+      function drawSlide(ctx, img, W, H, kb, tSlide, durSlide, opts){
+        const alpha = (opts && typeof opts.alpha === 'number') ? opts.alpha : 1;
+        const extraDx = (opts && typeof opts.dx === 'number') ? opts.dx : 0;
+        const extraDy = (opts && typeof opts.dy === 'number') ? opts.dy : 0;
+        const extraScale = (opts && typeof opts.scale === 'number') ? opts.scale : 1;
+        const rotDeg = (opts && typeof opts.rotDeg === 'number') ? opts.rotDeg : 0;
+        const blurPx = (opts && typeof opts.blurPx === 'number') ? opts.blurPx : 0;
+
+        const imgW = img.naturalWidth || img.width;
+        const imgH = img.naturalHeight || img.height;
+
+        // Ken Burns interpolation
+        let kbScale = 1, kbDx = 0, kbDy = 0;
+        if (kb){
+          const p = clamp01(durSlide > 0 ? (tSlide / durSlide) : 0);
+          kbScale = lerp(kb.fs, kb.ts, p);
+          kbDx = lerp(kb.fx, kb.tx, p) / 100 * W;
+          kbDy = lerp(kb.fy, kb.ty, p) / 100 * H;
+        }
+
+        // Background (blurred cover)
+        ctx.save();
+        ctx.globalAlpha = 0.55 * alpha;
+        if ('filter' in ctx) ctx.filter = 'blur(18px) saturate(1.1)';
+        const bg = fitCover(imgW, imgH, W, H);
+        ctx.drawImage(img, (W - bg.w)/2, (H - bg.h)/2, bg.w, bg.h);
+        ctx.restore();
+
+        // Slight dark overlay for contrast
+        ctx.save();
+        ctx.globalAlpha = 0.18 * alpha;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0,0,W,H);
+        ctx.restore();
+
+        // Foreground image (contain) with transforms
+        const fg = fitContain(imgW, imgH, W, H);
+        const scale = kbScale * extraScale;
+        const cx = W/2 + kbDx + extraDx;
+        const cy = H/2 + kbDy + extraDy;
+        const w = fg.w * scale;
+        const h = fg.h * scale;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        if ('filter' in ctx) ctx.filter = blurPx > 0 ? ('blur(' + blurPx + 'px)') : 'none';
+        ctx.translate(cx, cy);
+        ctx.rotate(rotDeg * Math.PI / 180);
+        ctx.drawImage(img, -w/2, -h/2, w, h);
+        ctx.restore();
+      }
+
+      function transitionParams(type, a, W){
+        const pPrev = { alpha: 1-a, dx:0, dy:0, scale:1, rotDeg:0, blurPx:0 };
+        const pNext = { alpha: a,   dx:0, dy:0, scale:1, rotDeg:0, blurPx:0 };
+        let flash = 0;
+
+        if (type === 'blur-fade'){
+          pPrev.blurPx = lerp(0, 14, a);
+          pNext.blurPx = lerp(16, 0, a);
+          pNext.scale = lerp(1.03, 1.00, a);
+          pPrev.scale = lerp(1.00, 0.99, a);
+        } else if (type === 'slide'){
+          const shift = 0.08 * W;
+          pPrev.dx = lerp(0, -shift, a);
+          pNext.dx = lerp(shift, 0, a);
+          pPrev.alpha = 1 - a;
+          pNext.alpha = a;
+        } else if (type === 'zoom-cross'){
+          pPrev.scale = lerp(1.00, 0.98, a);
+          pNext.scale = lerp(1.08, 1.00, a);
+          pPrev.alpha = 1 - a;
+          pNext.alpha = a;
+        } else if (type === 'film-cut'){
+          // A fast cut + flash
+          const cut = a < 0.5 ? 0 : 1;
+          pPrev.alpha = cut ? 0 : 1;
+          pNext.alpha = cut ? 1 : 0;
+          // Flash on the first third
+          const k = a < 0.35 ? (1 - a/0.35) : 0;
+          flash = k;
+        } else if (type === 'polaroid-flip'){
+          pPrev.rotDeg = lerp(0, -12, a);
+          pNext.rotDeg = lerp(12, 0, a);
+          pPrev.blurPx = lerp(0, 6, a);
+          pNext.blurPx = lerp(6, 0, a);
+          pPrev.alpha = 1 - a;
+          pNext.alpha = a;
+          pPrev.scale = lerp(1.00, 0.98, a);
+          pNext.scale = lerp(1.02, 1.00, a);
+        } else {
+          // fade / dissolve default
+          pPrev.alpha = 1 - a;
+          pNext.alpha = a;
+        }
+
+        return {pPrev, pNext, flash};
+      }
+
+      function estimateBitrateMbps(W, H){
+        // rough heuristic
+        const pixels = W*H;
+        if (pixels >= 1920*1080) return 12;
+        if (pixels >= 1280*720) return 8;
+        return 4;
+      }
+
+      function downloadBlob(filename, blob){
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      }
+
+      let exportAbortFn = null;
+
+      async function startExport(){
+        if (state.images.length === 0){
+          alert('Сначала загрузите изображения.');
+          return;
+        }
+        const recType = getBestRecorderType();
+        if (!recType){
+          alert('MediaRecorder недоступен. Попробуйте Chrome/Edge на ПК.');
+          return;
+        }
+        if (!HTMLCanvasElement.prototype.captureStream){
+          alert('canvas.captureStream() недоступен. Попробуйте Chrome/Edge на ПК.');
+          return;
+        }
+
+        // UI lock
+        exportStartBtn.disabled = true;
+        exportCancelBtn.disabled = false;
+        exportCloseBtn.disabled = true;
+        exportProgressWrap.style.display = 'block';
+        exportProgressText.textContent = 'Подготовка ресурсов…';
+        exportEtaText.textContent = ' ';
+        exportProgressBar.style.width = '0%';
+
+        // Disable rest of app controls
+        setBusy(true);
+
+        let aborted = false;
+        exportAbortFn = () => { aborted = true; };
+        exportCancelBtn.onclick = () => { if (exportAbortFn) exportAbortFn(); };
+
+        const {w:W, h:H} = parseResolution(exportResSelect.value);
+        const fps = Number(exportFpsSelect.value || 30);
+        const includeAudioWanted = !!exportAudioToggle.checked && !!state.audio;
+        const bitrateChoice = String(exportBitrateSelect.value || 'auto');
+
+        const totalSlides = state.images.length;
+        const slideSec = Number(state.slideDuration || 5);
+        const lastSlideSec = 10;
+        const lastFadeStartSec = 3;
+        const lastStart = Math.max(0, (totalSlides - 1) * slideSec);
+        const totalDurationSec = lastStart + lastSlideSec;
+
+        // Pick transitions for this export (deterministic within this export run)
+        const transPlan = new Array(totalSlides).fill('fade');
+        for (let i=1; i<totalSlides; i++){
+          transPlan[i] = chooseTransition(state.transition);
+        }
+
+        // Ken Burns presets per slide
+        const kbPlan = new Array(totalSlides).fill(null);
+        if (state.kenBurns && !prefersReducedMotion){
+          for (let i=0; i<totalSlides; i++){
+            kbPlan[i] = chooseKbPreset();
+          }
+        }
+
+        // Prepare canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d', {alpha:false});
+        if (!ctx){
+          alert('Не удалось создать 2D‑контекст canvas.');
+          cleanupExportUI();
+          return;
+        }
+
+        // Load images
+        const urls = state.images.map(x => x.dataUrl);
+        let imgs = null;
+        try{
+          exportProgressText.textContent = 'Загрузка изображений…';
+          imgs = await loadImagesForExport(urls);
+        } catch(e){
+          console.error(e);
+          alert('Не удалось загрузить изображения для экспорта. Попробуйте другой браузер.');
+          cleanupExportUI();
+          return;
+        }
+
+        if (aborted){
+          cleanupExportUI();
+          return;
+        }
+
+        // Audio capture setup (optional)
+        let exportAudio = null;
+        let audioCtx = null;
+        let audioGain = null;
+        let audioDest = null;
+        let stream = null;
+
+        const canvasStream = canvas.captureStream(fps);
+
+        let audioAvailable = false;
+        if (includeAudioWanted && state.audio){
+          exportAudio = new Audio();
+          exportAudio.src = state.audio.dataUrl;
+          exportAudio.preload = 'auto';
+          exportAudio.loop = false;
+          exportAudio.crossOrigin = 'anonymous';
+
+          // Prefer WebAudio mix (better for recording)
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC){
+            try{
+              audioCtx = new AC();
+              await audioCtx.resume().catch(()=>{});
+              const srcNode = audioCtx.createMediaElementSource(exportAudio);
+              audioGain = audioCtx.createGain();
+              audioGain.gain.value = 1;
+
+              audioDest = audioCtx.createMediaStreamDestination();
+              srcNode.connect(audioGain);
+              audioGain.connect(audioDest);
+
+              // We don't connect to audioCtx.destination by default (silent export),
+              // but you can uncomment next line if you want monitoring:
+              // audioGain.connect(audioCtx.destination);
+
+              stream = new MediaStream([
+                ...canvasStream.getVideoTracks(),
+                ...audioDest.stream.getAudioTracks(),
+              ]);
+              audioAvailable = true;
+            } catch(e){
+              console.warn('AudioContext capture failed, fallback to video-only', e);
+              audioAvailable = false;
+            }
+          } else if (exportAudio.captureStream){
+            try{
+              const as = exportAudio.captureStream();
+              stream = new MediaStream([
+                ...canvasStream.getVideoTracks(),
+                ...as.getAudioTracks(),
+              ]);
+              audioAvailable = true;
+            } catch(e){
+              audioAvailable = false;
+            }
+          } else {
+            audioAvailable = false;
+          }
+        }
+
+        if (!stream){
+          stream = canvasStream;
+        }
+
+        // Recorder
+        const chunks = [];
+        const bitsMbps = (bitrateChoice === 'auto')
+          ? estimateBitrateMbps(W,H)
+          : Math.max(1, Number(bitrateChoice));
+
+        const recOptions = {
+          mimeType: recType.mime || undefined,
+          videoBitsPerSecond: Math.round(bitsMbps * 1_000_000),
+        };
+
+        let recorder = null;
+        try{
+          recorder = new MediaRecorder(stream, recOptions);
+        } catch(e){
+          console.warn('MediaRecorder init failed with options, trying without mimeType', e);
+          try{
+            recorder = new MediaRecorder(stream);
+          } catch(e2){
+            console.error(e2);
+            alert('MediaRecorder не смог стартовать в этом браузере.');
+            cleanupExportUI();
+            return;
+          }
+        }
+
+        recorder.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+        };
+
+        const stoppedPromise = new Promise((resolve) => {
+          recorder.onstop = () => resolve();
+        });
+
+        // Start
+        exportProgressText.textContent = 'Старт записи…';
+        exportProgressBar.style.width = '0%';
+
+        // Try to start audio playback (must be user gesture, we're inside click handler)
+        if (audioAvailable && exportAudio){
+          try{ exportAudio.currentTime = 0; }catch(e){}
+          try{
+            await exportAudio.play();
+          } catch(e){
+            console.warn('Audio play blocked; continue video-only', e);
+            audioAvailable = false;
+          }
+        }
+
+        recorder.start(1000);
+
+        const start = performance.now();
+        const frameDur = 1000 / fps;
+        let nextFrameAt = start;
+        let lastUiUpdateAt = start;
+
+        function renderFrame(now){
+          if (aborted){
+            try{ recorder.stop(); }catch(e){}
+            if (exportAudio){ try{ exportAudio.pause(); }catch(e){} }
+            if (audioCtx){ try{ audioCtx.close(); }catch(e){} }
+            return;
+          }
+
+          if (now < nextFrameAt){
+            requestAnimationFrame(renderFrame);
+            return;
+          }
+
+          const t = (now - start) / 1000;
+
+          // Determine current slide index
+          let i = 0;
+          let slideStart = 0;
+          let dur = slideSec;
+
+          if (t >= lastStart){
+            i = totalSlides - 1;
+            slideStart = lastStart;
+            dur = lastSlideSec;
+          } else {
+            i = Math.min(totalSlides - 1, Math.floor(t / slideSec));
+            slideStart = i * slideSec;
+            dur = slideSec;
+          }
+          const local = Math.max(0, t - slideStart);
+
+          // Clear
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0,0,W,H);
+
+          // Transition into slide i?
+          const trType = (i > 0) ? transPlan[i] : null;
+          const trDur = trType ? (TRANS_DUR[trType] || 0.9) : 0;
+          const inTr = (i > 0 && local < trDur);
+
+          if (inTr){
+            const a = clamp01(local / trDur);
+            const prevIdx = i - 1;
+            const nextIdx = i;
+
+            const kbPrev = kbPlan[prevIdx];
+            const kbNext = kbPlan[nextIdx];
+
+            // Prev at end of its duration
+            const prevDur = (prevIdx === totalSlides - 1) ? lastSlideSec : slideSec;
+
+            const params = transitionParams(trType, a, W);
+            // Draw previous (freeze at the end of its KB movement)
+            drawSlide(ctx, imgs[prevIdx], W, H, kbPrev, prevDur, prevDur, params.pPrev);
+            // Draw next (starts its KB at 0)
+            drawSlide(ctx, imgs[nextIdx], W, H, kbNext, local, dur, params.pNext);
+
+            if (params.flash > 0){
+              ctx.save();
+              ctx.globalAlpha = 0.95 * params.flash;
+              ctx.fillStyle = '#fff';
+              ctx.fillRect(0,0,W,H);
+              ctx.restore();
+            }
+          } else {
+            const kb = kbPlan[i];
+            drawSlide(ctx, imgs[i], W, H, kb, local, dur, {alpha:1});
+          }
+
+          // Vignette + greeting
+          drawVignette(ctx, W, H);
+          drawGreeting(ctx, W, H, t);
+
+          // Audio fade on last slide
+          if (audioAvailable && audioGain){
+            if (t >= lastStart + lastFadeStartSec){
+              const u = clamp01((t - (lastStart + lastFadeStartSec)) / (lastSlideSec - lastFadeStartSec));
+              audioGain.gain.value = 1 - u;
+            } else {
+              audioGain.gain.value = 1;
+            }
+          }
+
+          // UI progress update (throttle)
+          if (now - lastUiUpdateAt > 120){
+            const pct = clamp01(t / totalDurationSec);
+            exportProgressBar.style.width = (pct*100).toFixed(1) + '%';
+            exportProgressText.textContent = 'Запись: ' + Math.min(100, Math.round(pct*100)) + '%';
+            // crude ETA
+            const elapsed = t;
+            const remain = Math.max(0, totalDurationSec - elapsed);
+            exportEtaText.textContent = 'Осталось ~ ' + Math.ceil(remain) + ' сек.';
+            lastUiUpdateAt = now;
+          }
+
+          nextFrameAt += frameDur;
+
+          if (t >= totalDurationSec){
+            // Finish
+            try{ recorder.stop(); }catch(e){}
+            if (exportAudio){ try{ exportAudio.pause(); }catch(e){} }
+            if (audioCtx){ try{ audioCtx.close(); }catch(e){} }
+            return;
+          }
+
+          requestAnimationFrame(renderFrame);
+        }
+
+        exportProgressText.textContent = 'Запись…';
+        requestAnimationFrame(renderFrame);
+
+        // Wait until recorder stops and build file
+        await stoppedPromise;
+
+        if (aborted){
+          cleanupExportUI();
+          return;
+        }
+
+        exportProgressText.textContent = 'Сборка файла…';
+
+        const blob = new Blob(chunks, {type: (recType.mime || 'video/webm')});
+        const ts = new Date();
+        const pad = (n) => String(n).padStart(2,'0');
+        const filename = 'new-year-show-' + ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) + '-' + pad(ts.getHours()) + pad(ts.getMinutes()) + '.' + (recType.ext || 'webm');
+
+        downloadBlob(filename, blob);
+
+        exportProgressBar.style.width = '100%';
+        exportProgressText.textContent = 'Готово! Видео скачано.';
+        exportEtaText.textContent = ' ';
+        exportCancelBtn.disabled = true;
+        exportCloseBtn.disabled = false;
+
+        // Keep modal open so user sees result
+        exportAbortFn = null;
+
+        // Re-enable app controls
+        setBusy(false);
+      }
+
+      function cleanupExportUI(){
+        exportStartBtn.disabled = false;
+        exportCancelBtn.disabled = true;
+        exportCloseBtn.disabled = false;
+        exportProgressWrap.style.display = 'none';
+        exportProgressBar.style.width = '0%';
+        exportEtaText.textContent = ' ';
+        exportAbortFn = null;
+        setBusy(false);
+      }
+
+      exportStartBtn.addEventListener('click', () => {
+        // Fresh support check
+        updateExportSupportLine();
+        if (exportStartBtn.disabled) return;
+        startExport().catch((e) => {
+          console.error(e);
+          alert('Ошибка экспорта: ' + (e && e.message ? e.message : String(e)));
+          cleanupExportUI();
+        });
+      });
+
+      exportCancelBtn.addEventListener('click', () => {
+        if (exportAbortFn) exportAbortFn();
+        exportCancelBtn.disabled = true;
+        exportProgressText.textContent = 'Останавливаем…';
+      });
+
+      // Initial render
+      renderGrid();
+      durationValue.textContent = state.slideDuration + ' сек.';
+      setBusy(false);
+    })();
+  </script>
+</body>
+</html>
